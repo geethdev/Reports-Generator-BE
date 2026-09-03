@@ -5,6 +5,7 @@ const connectDB = require('./config/db');
 const { notFound, errorHandler } = require('./middleware/errorHandler');
 const healthRoutes = require('./routes/health');
 const authRoutes = require('./routes/auth');
+const projectRoutes = require('./routes/projects');
 
 const app = express();
 
@@ -13,6 +14,7 @@ app.use(express.json());
 
 app.use('/api/health', healthRoutes);
 app.use('/api/auth', authRoutes);
+app.use('/api/projects', projectRoutes);
 
 app.use(notFound);
 app.use(errorHandler);
