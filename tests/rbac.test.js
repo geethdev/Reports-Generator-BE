@@ -5,6 +5,29 @@ const request = require('supertest');
 let mongod;
 let app;
 
+function sampleContent(overrides = {}) {
+  return {
+    tasks: [
+      {
+        taskName: 'Implement feature',
+        priority: 'high',
+        plannedPercent: 100,
+        actualPercent: 80,
+        status: 'in_progress',
+        timePlannedHours: 10,
+        timeSpentHours: 8,
+        output: 'Draft PR opened',
+      },
+    ],
+    planForNextWeek: 'plan',
+    blockers: [{ text: 'Waiting on review', isKey: true }],
+    achievements: [{ text: 'Shipped a fix', isKey: true }],
+    hoursByCategory: { development: 8, testing: 2, meetings: 1, documentation: 0 },
+    notes: '',
+    ...overrides,
+  };
+}
+
 beforeAll(async () => {
   mongod = await MongoMemoryServer.create();
   process.env.MONGO_URI = mongod.getUri();
@@ -91,20 +114,20 @@ describe('Role-based access control', () => {
       .send({
         project: projectId,
         weekStartDate: '2026-08-31',
-        content: { tasksCompleted: 'work', planForNextWeek: 'plan' },
+        content: sampleContent(),
       });
     const reportId = createRes.body.report._id;
 
     const ownEdit = await request(app)
       .put(`/api/reports/${reportId}`)
       .set('Authorization', `Bearer ${memberToken}`)
-      .send({ content: { tasksCompleted: 'updated work', planForNextWeek: 'plan' } });
+      .send({ content: sampleContent({ planForNextWeek: 'updated plan' }) });
     expect(ownEdit.status).toBe(200);
 
     const otherEdit = await request(app)
       .put(`/api/reports/${reportId}`)
       .set('Authorization', `Bearer ${otherMemberToken}`)
-      .send({ content: { tasksCompleted: 'hijack', planForNextWeek: 'plan' } });
+      .send({ content: sampleContent({ planForNextWeek: 'hijack' }) });
     expect(otherEdit.status).toBe(403);
   });
 
@@ -115,7 +138,7 @@ describe('Role-based access control', () => {
       .send({
         project: projectId,
         weekStartDate: '2026-08-31',
-        content: { tasksCompleted: 'work', planForNextWeek: 'plan' },
+        content: sampleContent(),
       });
     const reportId = createRes.body.report._id;
     await request(app).post(`/api/reports/${reportId}/submit`).set('Authorization', `Bearer ${memberToken}`);
@@ -134,7 +157,7 @@ describe('Role-based access control', () => {
       .send({
         project: projectId,
         weekStartDate: '2026-09-07',
-        content: { tasksCompleted: 'work', planForNextWeek: 'plan' },
+        content: sampleContent(),
       });
     const reportId = createRes.body.report._id;
     await request(app).post(`/api/reports/${reportId}/submit`).set('Authorization', `Bearer ${memberToken}`);

@@ -22,10 +22,43 @@ function weeksAgo(n) {
 
 function content(memberName, weekLabel) {
   return {
-    tasksCompleted: `${memberName} completed key tasks for ${weekLabel}`,
-    blockers: weekLabel === "this week" ? "Waiting on design sign-off" : "",
-    planForNextWeek: "Continue with planned deliverables",
-    hoursWorked: 35 + Math.floor(Math.random() * 8),
+    tasks: [
+      {
+        taskName: "Implement core feature work",
+        priority: "high",
+        plannedPercent: 100,
+        actualPercent: weekLabel === "this week" ? 70 : 100,
+        status: weekLabel === "this week" ? "in_progress" : "completed",
+        timePlannedHours: 20,
+        timeSpentHours: 18,
+        output: "Feature branch merged to develop",
+      },
+      {
+        taskName: "Code review and QA support",
+        priority: "medium",
+        plannedPercent: 100,
+        actualPercent: 100,
+        status: "completed",
+        timePlannedHours: 6,
+        timeSpentHours: 5,
+        output: "Reviewed 4 pull requests",
+      },
+    ],
+    planForNextWeek: "Continue with planned deliverables and start next milestone",
+    blockers:
+      weekLabel === "this week"
+        ? [{ text: "Waiting on design sign-off", isKey: true }]
+        : [],
+    achievements: [
+      { text: `${memberName} shipped a key improvement this week`, isKey: true },
+    ],
+    hoursByCategory: {
+      development: 22,
+      testing: 6,
+      meetings: 5,
+      documentation: 2,
+    },
+    notes: "",
   };
 }
 
@@ -70,7 +103,7 @@ async function buildReport({
   if (status === "needs_correction") {
     const revisedContent = {
       ...originalContent,
-      blockers: "Need clearer scope from manager",
+      blockers: [{ text: "Need clearer scope from manager", isKey: true }],
     };
     return {
       ...base,
