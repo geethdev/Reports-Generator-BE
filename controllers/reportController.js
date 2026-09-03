@@ -41,4 +41,31 @@ async function updateReport(req, res) {
   res.json({ report });
 }
 
-module.exports = { createReport, updateReport };
+async function submitReport(req, res) {
+  const report = await Report.findById(req.params.id);
+
+  if (!report) {
+    return res.status(404).json({ message: 'Report not found' });
+  }
+
+  if (report.owner.toString() !== req.user._id.toString()) {
+    return res.status(403).json({ message: 'Forbidden: not the owner of this report' });
+  }
+
+  if (!['draft', 'needs_correction'].includes(report.status)) {
+    return res.status(400).json({ message: `Cannot submit a report with status "${report.status}"` });
+  }
+
+  report.previousVersions.push({
+    versionNumber: report.currentVersionNumber,
+    content: report.content,
+    submittedAt: new Date(),
+  });
+  report.currentVersionNumber += 1;
+  report.status = 'submitted';
+
+  await report.save();
+  res.json({ report });
+}
+
+module.exports = { createReport, updateReport, submitReport };
