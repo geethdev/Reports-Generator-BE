@@ -145,6 +145,35 @@ async function listTeamReports(req, res) {
   });
 }
 
+async function reviewReport(req, res) {
+  const { action, comment } = req.body;
+
+  if (!['approved', 'requested_changes'].includes(action)) {
+    return res.status(400).json({ message: 'action must be "approved" or "requested_changes"' });
+  }
+
+  const report = await Report.findById(req.params.id);
+
+  if (!report) {
+    return res.status(404).json({ message: 'Report not found' });
+  }
+
+  if (report.status !== 'submitted') {
+    return res.status(400).json({ message: `Cannot review a report with status "${report.status}"` });
+  }
+
+  report.status = action === 'approved' ? 'approved' : 'needs_correction';
+  report.reviewHistory.push({
+    reviewer: req.user._id,
+    action,
+    comment: comment || '',
+    reviewedAt: new Date(),
+  });
+
+  await report.save();
+  res.json({ report });
+}
+
 module.exports = {
   createReport,
   updateReport,
@@ -152,4 +181,5 @@ module.exports = {
   listMyReports,
   getReportById,
   listTeamReports,
+  reviewReport,
 };
